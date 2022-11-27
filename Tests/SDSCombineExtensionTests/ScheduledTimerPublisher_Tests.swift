@@ -12,7 +12,7 @@ final class ScheduledTimerPublisher_Tests: XCTestCase {
 
     func test_ScheduledTimerPublisher_after_withoutRepeat() async throws {
         let trigger = Date().advanced(by: 5)
-        let sut = ScheduledTimerPublisher(after: .seconds(5))
+        let sut = ScheduledTimerPublisher(after: 5)
 
         let receiver = PublisherReceiver(sut)
 

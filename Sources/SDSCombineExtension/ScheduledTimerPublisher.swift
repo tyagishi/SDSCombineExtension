@@ -16,10 +16,10 @@ public class ScheduledTimerPublisher: Publisher {
     let internalPublisher = PassthroughSubject<Date,Never>()
 
     let initialTrigger: Date
-    let repeatDuration: Duration?
+    let repeatDuration: TimeInterval?
     var cancellable: AnyCancellable? = nil
 
-    public init(fire: Date, repeatDuration: Duration? = nil) {
+    public init(fire: Date, repeatDuration: TimeInterval? = nil) {
         self.initialTrigger = fire
         self.repeatDuration = repeatDuration
         let timer = Timer.init(fire: initialTrigger, interval: 100, repeats: false) { timer in
@@ -30,9 +30,33 @@ public class ScheduledTimerPublisher: Publisher {
         RunLoop.current.add(timer, forMode: .common)
     }
 
+    public init(after: TimeInterval, repeatDuration: TimeInterval? = nil) {
+        self.initialTrigger = Date().advanced(by: after)
+        self.repeatDuration = repeatDuration
+        let timer = Timer.init(fire: initialTrigger, interval: 100, repeats: false) { timer in
+            self.internalPublisher.send(Date())
+            timer.invalidate()
+            self.setupRepeat()
+        }
+        RunLoop.current.add(timer, forMode: .common)
+    }
+
+    @available(macOS 13, iOS 16, *)
+    public init(fire: Date, repeatDuration: Duration? = nil) {
+        self.initialTrigger = fire
+        self.repeatDuration = repeatDuration?.timeInterval
+        let timer = Timer.init(fire: initialTrigger, interval: 100, repeats: false) { timer in
+            self.internalPublisher.send(Date())
+            timer.invalidate()
+            self.setupRepeat()
+        }
+        RunLoop.current.add(timer, forMode: .common)
+    }
+
+    @available(macOS 13, iOS 16, *)
     public init(after: Duration, repeatDuration: Duration? = nil) {
         self.initialTrigger = Date().advanced(by: after.timeInterval)
-        self.repeatDuration = repeatDuration
+        self.repeatDuration = repeatDuration?.timeInterval
         let timer = Timer.init(fire: initialTrigger, interval: 100, repeats: false) { timer in
             self.internalPublisher.send(Date())
             timer.invalidate()
@@ -43,7 +67,7 @@ public class ScheduledTimerPublisher: Publisher {
 
     func setupRepeat() {
         if let repeatDuration {
-            cancellable = Timer.TimerPublisher(interval: repeatDuration.timeInterval, runLoop: .main, mode: .common)
+            cancellable = Timer.TimerPublisher(interval: repeatDuration, runLoop: .main, mode: .common)
                 .autoconnect()
                 .sink { newDate in
                     self.internalPublisher.send(newDate)

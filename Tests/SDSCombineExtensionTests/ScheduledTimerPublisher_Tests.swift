@@ -27,4 +27,21 @@ final class ScheduledTimerPublisher_Tests: XCTestCase {
         XCTAssertEqual(value.timeIntervalSinceReferenceDate, trigger.timeIntervalSinceReferenceDate, accuracy: 0.1)
     }
 
+
+    func test_ScheduledTimerPublisher_atDate_withoutRepeat() async throws {
+        let trigger = Date().advanced(by: 5)
+        let sut = ScheduledTimerPublisher(fire: trigger)
+
+        let receiver = PublisherReceiver(sut)
+
+        let expec = expectation(description: "Expectation")
+
+        let check = sut.sink { date in
+            expec.fulfill()
+        }
+        wait(for: [expec], timeout: 10)
+
+        let value = try XCTUnwrap(receiver.lastValue)
+        XCTAssertEqual(value.timeIntervalSinceReferenceDate, trigger.timeIntervalSinceReferenceDate, accuracy: 0.1)
+    }
 }
